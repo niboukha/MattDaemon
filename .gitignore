@@ -1,0 +1,13 @@
+# Build artifacts
+obj/
+Matt_daemon
+
+# Editor files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
