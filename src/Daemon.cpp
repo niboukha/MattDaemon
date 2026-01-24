@@ -81,20 +81,22 @@ void Daemon::daemonize() {
     // Change working directory to root
     chdir("/");
     
-    // Close all open file descriptors
-    for (int x = sysconf(_SC_OPEN_MAX); x >= 0; x--) {
-        close(x);
-    }
-    
-    // Create lock file
+    // Create lock file before closing file descriptors
     createLockFile();
+    
+    // Close all open file descriptors except the lock file
+    for (int x = sysconf(_SC_OPEN_MAX); x >= 0; x--) {
+        if (x != lockFd_) {
+            close(x);
+        }
+    }
 }
 
 void Daemon::run() {
-    std::cout << "Matt_daemon started" << std::endl;
-    
+    // Main daemon loop
+    // Note: stdout is closed after daemonization
+    // Use syslog or log files for daemon logging
     while (true) {
-        // Main daemon loop
         sleep(1);
     }
 }
