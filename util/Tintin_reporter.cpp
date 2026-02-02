@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <sys/stat.h>
 
 Tintin_reporter::Tintin_reporter() : currentLevel(INFO) {}
 
@@ -22,6 +23,14 @@ void Tintin_reporter::initialize(const std::string& filePath = "/var/log/matt_da
     }
     
     logFilePath = filePath;
+    
+    // Create directory if it doesn't exist
+    size_t pos = logFilePath.find_last_of("/");
+    if (pos != std::string::npos) {
+        std::string dir = logFilePath.substr(0, pos);
+        mkdir(dir.c_str(), 0755);
+    }
+    
     logFile.open(logFilePath, std::ios::out | std::ios::app);
     
     if (!logFile.is_open()) {
@@ -51,6 +60,7 @@ std::string Tintin_reporter::levelToString(LogLevel level) const {
         case INFO:    return "INFO";
         case WARNING: return "WARNING";
         case ERROR:   return "ERROR";
+        case LOG:     return "LOG";
         default:      return "UNKNOWN";
     }
 }
@@ -121,6 +131,14 @@ void Tintin_reporter::logDaemonStart() {
 
 void Tintin_reporter::logDaemonStop() {
     log(INFO, "Daemon stopped");
+}
+
+void Tintin_reporter::userLog(const std::string& message) {
+    std::ostringstream oss;
+    oss << "[" << formatTimestamp() << "] "
+        << "[ LOG ] "
+        << "- " << message;
+    writeToFile(oss.str());
 }
 
 void Tintin_reporter::setLogLevel(LogLevel level) {

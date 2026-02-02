@@ -15,6 +15,8 @@ private:
 
 public:
     Server();
+    Server(const Server&) = delete;
+    Server& operator=(const Server&) = delete;
     ~Server();
     
     int     start();
@@ -22,7 +24,7 @@ public:
     bool    handleConnections();
     
     std::string receiveFromClient(int client_fd);
-    int        sendToClient(int client_fd, const std::string& message);
+    int         sendToClient(int client_fd, const std::string& message);
     void        removeClient(int client_fd);
     int         acceptConnection();
     

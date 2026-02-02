@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <algorithm>
 #include <sstream>
+#include <errno.h>
 #include "../util/Tintin_reporter.hpp"
 #include "../parser/CommandParser.hpp"
 
@@ -58,14 +59,15 @@ int Server::start() {
 }
  
 void Server::stop() {
-    clients.clear();
-    Tintin_reporter::getInstance().info("Matt_daemon: Stopping server...");
-
-    if (server_fd != -1) {
-        Tintin_reporter::getInstance().info("Matt_daemon: Closing server socket");
-        close(server_fd);
-        server_fd = -1;
+    if (server_fd == -1) {
+        return;
     }
+    
+    Tintin_reporter::getInstance().info("Matt_daemon: Stopping server...");
+    clients.clear();
+    // Tintin_reporter::getInstance().info("Matt_daemon: Closing server socket");
+    close(server_fd);
+    server_fd = -1;
 }
 
 // keep it returning int for success/failure (in case I need it later)
@@ -90,9 +92,9 @@ int Server::acceptConnection() {
     clients.push_back(client_fd);
     
     // Log client connection with FD number
-    std::ostringstream oss;
-    oss << "Client #" << client_fd << " connected";
-    Tintin_reporter::getInstance().info(oss.str());
+    // std::ostringstream oss;
+    // oss << "Client #" << client_fd << " connected";
+    // Tintin_reporter::getInstance().info(oss.str());
     
     return client_fd;
 }
@@ -116,7 +118,9 @@ std::string Server::receiveFromClient(int client_fd) {
 int Server::sendToClient(int client_fd, const std::string& message) {
     ssize_t bytes = send(client_fd, message.c_str(), message.size(), 0);
     if (bytes < 0) {
-        Tintin_reporter::getInstance().error("Matt_daemon: send failed");
+        std::ostringstream oss;
+        oss << "Matt_daemon: send() failed to client #" << client_fd;
+        Tintin_reporter::getInstance().error(oss.str());
         return -1;
     }
     return 0;
@@ -149,6 +153,10 @@ bool Server::handleConnections() {
 
     int activity = select(max_fd + 1, &read_fds, nullptr, nullptr, &timeout);
     if (activity < 0) {
+        // EINTR means select() was interrupted by a signal (normal during shutdown)
+        if (errno == EINTR) {
+            return true;
+        }
         Tintin_reporter::getInstance().error("Matt_daemon: select failed");
         return true;
     }
@@ -164,15 +172,21 @@ bool Server::handleConnections() {
             if (message.empty()) {
                 removeClient(client_fd);
             } else {
-                CommandParser parser;
-                if (parser.parse(message) == 0 && parser.getCommand() == "quit") {
-                    Tintin_reporter::getInstance().info("Matt_daemon: Quit command received");
-                    return false;
-                }
+                std::stringstream ss(message);
+                std::string line;
+                while (std::getline(ss, line)) {
+                    if (line.empty()) {
+                        continue;
+                    }
 
-                std::ostringstream oss;
-                oss << "Matt_daemon: Client #" << client_fd << " sent: " << message;
-                Tintin_reporter::getInstance().info(oss.str());
+                    CommandParser parser;
+                    if (parser.parse(line) == 0 && parser.getCommand() == "quit") {
+                        Tintin_reporter::getInstance().info("Matt_daemon: Request quit.");
+                        return false;
+                    }
+
+                    Tintin_reporter::getInstance().userLog("Matt_daemon: User input: " + line);
+                }
             }
         }
     }

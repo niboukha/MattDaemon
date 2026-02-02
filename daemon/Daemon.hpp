@@ -17,10 +17,10 @@ class Daemon {
         
         void setupSignalHandlers();
         
-        bool handleCommand(const std::string& command);
-
     public:
         Daemon();
+        Daemon(const Daemon&) = delete;
+        Daemon& operator=(const Daemon&) = delete;
         ~Daemon();
         
         void handleSignal(int signal);

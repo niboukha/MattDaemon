@@ -11,3 +11,7 @@ Matt_daemon
 # IDE
 .vscode/
 .idea/
+
+
+*.pdf
+en.subject.pdf
