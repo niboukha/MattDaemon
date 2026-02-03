@@ -1,23 +1,26 @@
 NAME = Matt_daemon
 
 CXX = g++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++11 -I./src
+CXXFLAGS = -Wall -Wextra -Werror -std=c++11
 
-SRC_DIR = src
 OBJ_DIR = obj
 
-SRCS = $(SRC_DIR)/main.cpp \
-       $(SRC_DIR)/Daemon.cpp
+SRCS = main.cpp \
+       daemon/Daemon.cpp \
+       network/Server.cpp \
+       network/Client.cpp \
+       util/Tintin_reporter.cpp\
+	   parser/CommandParser.cpp
 
-OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+OBJS = $(SRCS:%.cpp=$(OBJ_DIR)/%.o)
 
 all: $(NAME)
 
 $(NAME): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	@mkdir -p $(OBJ_DIR)
+$(OBJ_DIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
