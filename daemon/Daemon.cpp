@@ -35,9 +35,9 @@ bool Daemon::createLockFile() {
         return false;
     }
 
-    ftruncate(lockFd, 0);
-    std::string pidStr = std::to_string(getpid());
-    write(lockFd, pidStr.c_str(), pidStr.size());
+    // ftruncate(lockFd, 0); // no need to it cause already 
+    // std::string pidStr = std::to_string(getpid());
+    // write(lockFd, pidStr.c_str(), pidStr.size());
     return true;
 }
 
@@ -91,44 +91,6 @@ void Daemon::handleSignal(int signum) {
     stop();
 }
 
-int Daemon::run() {
-    Tintin_reporter& logger = Tintin_reporter::getInstance();
-    
-    logger.info("Matt_daemon: Started.");
-
-    if (!createLockFile()) {
-        std::cerr << "Can't open :/var/lock/matt_daemon.lock" << std::endl;
-        logger.error("Matt_daemon: Error file locked.");
-        logger.info("Matt_daemon: Quitting.");
-        return 1;
-    }
-    
-    logger.info("Matt_daemon: Entering Daemon mode.");
-    daemonize();
-    
-    logger.initialize("/var/log/matt_daemon/matt_daemon.log");
-    
-    setupSignalHandlers();
-    logger.info("Matt_daemon: started. PID: " + std::to_string(getpid()));
-    
-    logger.info("Matt_daemon: Creating server.");
-    if (server.start() < 0) {
-        logger.error("Matt_daemon: Failed to start server");
-        return 1;
-    }
-    logger.info("Matt_daemon: Server created.");
-    
-    running = true;
-    while (running) {
-        if (!server.handleConnections()) {
-            running = false;
-        }
-    }
-    
-    logger.info("Matt_daemon: Quitting.");
-    return 0;
-}
-
 void Daemon::stop() {
     g_daemon_instance = nullptr;
     running = false;
@@ -173,3 +135,48 @@ void Daemon::daemonize() {
         if (devNull > 2) close(devNull);
     }
 }
+
+int Daemon::run() {
+    Tintin_reporter& logger = Tintin_reporter::getInstance();
+    
+    logger.info("Matt_daemon: Started.");
+
+    if (!createLockFile()) {
+        std::cerr << "Can't open :/var/lock/matt_daemon.lock" << std::endl;
+        logger.error("Matt_daemon: Error file locked.");
+        logger.info("Matt_daemon: Quitting.");
+        return 1;
+    }
+    
+    logger.info("Matt_daemon: Entering Daemon mode.");
+    daemonize();
+
+    if (lockFd != -1) {
+        ftruncate(lockFd, 0);
+        std::string pidStr = std::to_string(getpid());
+        write(lockFd, pidStr.c_str(), pidStr.size());
+    }
+    
+    logger.initialize("/var/log/matt_daemon/matt_daemon.log");
+    
+    setupSignalHandlers();
+    logger.info("Matt_daemon: started. PID: " + std::to_string(getpid()));
+    
+    logger.info("Matt_daemon: Creating server.");
+    if (server.start() < 0) {
+        logger.error("Matt_daemon: Failed to start server");
+        return 1;
+    }
+    logger.info("Matt_daemon: Server created.");
+    
+    running = true;
+    while (running) {
+        if (!server.handleConnections()) {
+            running = false;
+        }
+    }
+    
+    logger.info("Matt_daemon: Quitting.");
+    return 0;
+}
+

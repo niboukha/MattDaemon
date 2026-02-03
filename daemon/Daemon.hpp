@@ -25,9 +25,9 @@ class Daemon {
         
         void handleSignal(int signal);
         
-        int run();
         void stop();
         void daemonize();
+        int run();
 };
 
 #endif

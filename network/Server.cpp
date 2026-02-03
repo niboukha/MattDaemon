@@ -70,71 +70,6 @@ void Server::stop() {
     server_fd = -1;
 }
 
-// keep it returning int for success/failure (in case I need it later)
-int Server::acceptConnection() {
-    struct sockaddr_in client_addr;
-    socklen_t client_len = sizeof(client_addr);
-    int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
-    
-    if (client_fd < 0) {
-        Tintin_reporter::getInstance().error("Matt_daemon: Unable to accept new connection");
-        return -1;
-    }
-
-    if (clients.size() >= MAX_CLIENTS) {
-        Tintin_reporter::getInstance().warning("Matt_daemon: Max clients reached, rejecting connection");
-        const char *msg = "Server is full. Maximum clients reached, try again later.\n";
-        send(client_fd, msg, strlen(msg), MSG_NOSIGNAL);
-        close(client_fd);
-        return -1;
-    }
-    
-    clients.push_back(client_fd);
-    
-    // Log client connection with FD number
-    // std::ostringstream oss;
-    // oss << "Client #" << client_fd << " connected";
-    // Tintin_reporter::getInstance().info(oss.str());
-    
-    return client_fd;
-}
-
-std::string Server::receiveFromClient(int client_fd) {
-    char buffer[1024];
-    ssize_t bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-    if (bytes <= 0) {
-        if (bytes < 0) {
-            std::ostringstream oss;
-            oss << "Matt_daemon: recv() error from client #" << client_fd;
-            Tintin_reporter::getInstance().error(oss.str());
-        }
-        return "";
-    }
-    buffer[bytes] = '\0';
-    return std::string(buffer);
-}
-
-// i will need it to send data to the clients 
-int Server::sendToClient(int client_fd, const std::string& message) {
-    ssize_t bytes = send(client_fd, message.c_str(), message.size(), 0);
-    if (bytes < 0) {
-        std::ostringstream oss;
-        oss << "Matt_daemon: send() failed to client #" << client_fd;
-        Tintin_reporter::getInstance().error(oss.str());
-        return -1;
-    }
-    return 0;
-}
-
-void Server::removeClient(int client_fd) {
-    std::ostringstream oss;
-    oss << "Matt_daemon: Client #" << client_fd << " disconnected";
-    Tintin_reporter::getInstance().info(oss.str());
-    
-    clients.erase(std::remove(clients.begin(), clients.end(), client_fd), clients.end());
-    close(client_fd);
-}
-
 bool Server::handleConnections() {
     fd_set read_fds;
     FD_ZERO(&read_fds);
@@ -192,6 +127,71 @@ bool Server::handleConnections() {
     }
 
     return true;
+}
+
+std::string Server::receiveFromClient(int client_fd) {
+    char buffer[1024];
+    ssize_t bytes = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+    if (bytes <= 0) {
+        if (bytes < 0) {
+            std::ostringstream oss;
+            oss << "Matt_daemon: recv() error from client #" << client_fd;
+            Tintin_reporter::getInstance().error(oss.str());
+        }
+        return "";
+    }
+    buffer[bytes] = '\0';
+    return std::string(buffer);
+}
+
+// i will need it to send data to the clients 
+int Server::sendToClient(int client_fd, const std::string& message) {
+    ssize_t bytes = send(client_fd, message.c_str(), message.size(), 0);
+    if (bytes < 0) {
+        std::ostringstream oss;
+        oss << "Matt_daemon: send() failed to client #" << client_fd;
+        Tintin_reporter::getInstance().error(oss.str());
+        return -1;
+    }
+    return 0;
+}
+
+void Server::removeClient(int client_fd) {
+    std::ostringstream oss;
+    oss << "Matt_daemon: Client #" << client_fd << " disconnected";
+    Tintin_reporter::getInstance().info(oss.str());
+    
+    clients.erase(std::remove(clients.begin(), clients.end(), client_fd), clients.end());
+    close(client_fd);
+}
+
+// keep it returning int for success/failure (in case I need it later)
+int Server::acceptConnection() {
+    struct sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+    
+    if (client_fd < 0) {
+        Tintin_reporter::getInstance().error("Matt_daemon: Unable to accept new connection");
+        return -1;
+    }
+
+    if (clients.size() >= MAX_CLIENTS) {
+        Tintin_reporter::getInstance().warning("Matt_daemon: Max clients reached, rejecting connection");
+        const char *msg = "Server is full. Maximum clients reached, try again later.\n";
+        send(client_fd, msg, strlen(msg), MSG_NOSIGNAL);
+        close(client_fd);
+        return -1;
+    }
+    
+    clients.push_back(client_fd);
+    
+    // Log client connection with FD number
+    // std::ostringstream oss;
+    // oss << "Client #" << client_fd << " connected";
+    // Tintin_reporter::getInstance().info(oss.str());
+    
+    return client_fd;
 }
 
 int Server::getServerFd() const {
