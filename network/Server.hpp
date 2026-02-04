@@ -4,13 +4,26 @@
 #include <vector>
 #include <string>
 #include <sys/select.h>
+#include "Client.h"
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <algorithm>
+#include <sstream>
+#include <errno.h>
+#include "../util/Tintin_reporter.hpp"
+#include "../parser/CommandParser.hpp"
+#include "../CommandExecutor/CommandExecutor.h"
 
 #define PORT 4242
 #define MAX_CLIENTS 3
 
 class Server {
 private:
-    std::vector<int>    clients;
+    std::vector<Client>    clients;
     int                 server_fd;
 
 public:
@@ -29,7 +42,9 @@ public:
     int         acceptConnection();
     
     int                     getServerFd() const;
-    const std::vector<int>& getClients() const;
+    const std::vector<Client>& getClients() const;
+
+    void HandelClient(Client& client, int client_index);
 };
 
 #endif

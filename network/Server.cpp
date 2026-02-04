@@ -1,15 +1,5 @@
 #include "Server.hpp"
-#include <iostream>
-#include <cstring>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <algorithm>
-#include <sstream>
-#include <errno.h>
-#include "../util/Tintin_reporter.hpp"
-#include "../parser/CommandParser.hpp"
+
 
 Server::Server() : server_fd(-1) {
     Tintin_reporter::getInstance().info("Matt_daemon: Server instance created");
@@ -19,6 +9,68 @@ Server::~Server() {
     stop();
 }
 
+void Server::HandelClient(Client& client, int client_index) {
+    (void)client_index; // Unused parameter, can be removed if not needed later
+    CommandExecutor shell;
+    size_t pos;
+    while ((pos = client.getBuffer().find('\n')) != std::string::npos) {
+        printf("------------> ut from client %d\n", client.getFd());
+        std::string line = client.getBuffer().substr(0, pos);
+        std::string remaining = client.getBuffer().substr(pos + 1);  // Save before clearing
+        
+        client.clearBuffer();
+        client.appendToBuffer(remaining);
+        // Remove carriage return
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+        
+        printf("Client %d [state=%d]: '%s'\n", client.getFd(), client.getState(), line.c_str());
+        
+        switch (client.getState()) {
+            case STATE_USERNAME:
+                if (line.empty()) {
+                    sendToClient(client.getFd(), "ERROR: Username cannot be empty!\nUSERNAME: ");
+                } else {
+                    client.setUsername(line);
+                    sendToClient(client.getFd(), "PASSWORD: ");
+                    client.setState(STATE_PASSWORD);
+                }
+                break;
+                
+            case STATE_PASSWORD:
+                if (line.empty()) {
+                    sendToClient(client.getFd(), "ERROR: Password cannot be empty!\nPASSWORD: ");
+                } else if (client.Authenticate(client.getUsername(), line)) {
+                    const char *success = "Authentication successful!\nMatt-daemon> ";
+                    sendToClient(client.getFd(), success);
+                    client.setAuthenticated(true);
+                    client.setState(STATE_READY);
+                } else {
+                    const char *fail = "Authentication failed!\nUSERNAME: ";
+                    sendToClient(client.getFd(), fail);
+                    client.setState(STATE_USERNAME);
+                }
+                break;
+            
+            case STATE_READY:
+                if (line == "quit" || line == "exit") {
+                    sendToClient(client.getFd(), "Goodbye!\n");
+                    close(client.getFd());
+                    removeClient(client.getFd());
+                    // clients.erase(clients.begin() + client_index);
+                    client_index--;
+                } else if (!line.empty()) {
+                    std::string result = shell.executeCommand(line);
+                    result += "\nMatt-daemon> ";
+                    sendToClient(client.getFd(), result);
+                } else {
+                    sendToClient(client.getFd(), "Matt-daemon> ");
+                }
+                break;
+        }
+    }
+}
 int Server::start() {
     Tintin_reporter::getInstance().info("Matt_daemon: Starting server...");
     
@@ -75,10 +127,11 @@ bool Server::handleConnections() {
     FD_ZERO(&read_fds);
 
     FD_SET(server_fd, &read_fds);
-    for (int client_fd : clients) FD_SET(client_fd, &read_fds);
+    for (const Client& client : clients) FD_SET(client.getFd(), &read_fds);
 
     int max_fd = server_fd;
-    for (int client_fd : clients) {
+    for (const Client& client : clients) {
+        int client_fd = client.getFd();
         if (client_fd > max_fd) max_fd = client_fd;
     }
 
@@ -100,28 +153,34 @@ bool Server::handleConnections() {
         acceptConnection();
     }
 
-    std::vector<int> clients_snapshot = clients;
-    for (int client_fd : clients_snapshot) {
+    // std::vector<Client> clients_snapshot = clients;
+    for ( size_t i = 0; i < clients.size(); ++i) {
+        Client& client = clients[i];
+        int client_fd = client.getFd();
         if (FD_ISSET(client_fd, &read_fds)) {
             std::string message = receiveFromClient(client_fd);
             if (message.empty()) {
-                removeClient(client_fd);
-            } else {
-                std::stringstream ss(message);
-                std::string line;
-                while (std::getline(ss, line)) {
-                    if (line.empty()) {
-                        continue;
-                    }
+                    removeClient(client_fd);
+                    i--; // Adjust index after removal
+                } else {
+                printf("Received from client %d: %s", client_fd, message.c_str());
+                client.appendToBuffer(message);
+                HandelClient(client, i);
+                // std::stringstream ss(message);
+                // std::string line;
+                // while (std::getline(ss, line)) {
+                //     if (line.empty()) {
+                //         continue;
+                //     }
 
-                    CommandParser parser;
-                    if (parser.parse(line) == 0 && parser.getCommand() == "quit") {
-                        Tintin_reporter::getInstance().info("Matt_daemon: Request quit.");
-                        return false;
-                    }
+                //     CommandParser parser;
+                //     if (parser.parse(line) == 0 && parser.getCommand() == "quit") {
+                //         Tintin_reporter::getInstance().info("Matt_daemon: Request quit.");
+                //         return false;
+                //     }
 
-                    Tintin_reporter::getInstance().userLog("Matt_daemon: User input: " + line);
-                }
+                //     Tintin_reporter::getInstance().userLog("Matt_daemon: User input: " + line);
+                // }
             }
         }
     }
@@ -161,7 +220,9 @@ void Server::removeClient(int client_fd) {
     oss << "Matt_daemon: Client #" << client_fd << " disconnected";
     Tintin_reporter::getInstance().info(oss.str());
     
-    clients.erase(std::remove(clients.begin(), clients.end(), client_fd), clients.end());
+    clients.erase(std::remove_if(clients.begin(), clients.end(), [client_fd](const Client& client) {
+        return client.getFd() == client_fd;
+    }), clients.end());
     close(client_fd);
 }
 
@@ -184,13 +245,17 @@ int Server::acceptConnection() {
         return -1;
     }
     
-    clients.push_back(client_fd);
+    clients.push_back(Client(client_fd));
     
     // Log client connection with FD number
     // std::ostringstream oss;
     // oss << "Client #" << client_fd << " connected";
     // Tintin_reporter::getInstance().info(oss.str());
     
+    // Send a welcoming message to the client
+    const char *welcome_msg = "Welcome to Matt_daemon!\nUsername: ";
+    send(client_fd, welcome_msg, strlen(welcome_msg), MSG_NOSIGNAL);
+
     return client_fd;
 }
 
@@ -198,6 +263,6 @@ int Server::getServerFd() const {
     return server_fd;
 }
 
-const std::vector<int>& Server::getClients() const {
+const std::vector<Client>& Server::getClients() const {
     return clients;
 }
