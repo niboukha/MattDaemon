@@ -16,7 +16,6 @@ SRCS = main.cpp \
        network/Server.cpp \
        network/Client.cpp \
        util/Tintin_reporter.cpp\
-	   parser/CommandParser.cpp \
 	   CommandExecutor/CommandExecutor.cpp \
 	   mailService/mailService.cpp 
 

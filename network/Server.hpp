@@ -15,7 +15,6 @@
 #include <sstream>
 #include <errno.h>
 #include "../util/Tintin_reporter.hpp"
-#include "../parser/CommandParser.hpp"
 #include "../CommandExecutor/CommandExecutor.h"
 
 #define PORT 4242

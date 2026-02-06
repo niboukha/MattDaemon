@@ -23,7 +23,7 @@ class Tintin_reporter {
         std::size_t maxBytes; //size limit for log rotation
         std::size_t retentionCount; //number of rotated logs to keep
         bool gzipArchives; //whether to gzip rotated logs
-        
+
         struct LogTarget {
             std::string path;
             std::ofstream stream;
@@ -35,7 +35,7 @@ class Tintin_reporter {
         LogTarget commandsLog;
 
         Tintin_reporter();
-        
+
         std::string formatTimestamp() const;
         std::string levelToString(LogLevel level) const;
         void        openLog(LogTarget& target, const std::string& path);

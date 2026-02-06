@@ -1,5 +1,22 @@
 #include "Server.hpp"
 
+
+namespace {
+    std::string trim_cmd(std::string& input) {
+        size_t start = 0;
+        while (start < input.size() && std::isspace(static_cast<unsigned char>(input[start]))) {
+            ++start;
+        }
+
+        size_t end = input.size();
+        while (end > start && std::isspace(static_cast<unsigned char>(input[end - 1]))) {
+            --end;
+        }
+
+        return input.substr(start, end - start);
+    }
+}
+
 Server::Server() : server_fd(-1) {
     Tintin_reporter::getInstance().logSystem(INFO, "Matt_daemon: Server instance created");
 }
@@ -25,6 +42,7 @@ void Server::HandleClient(Client& client, size_t &idx) {
                 
         switch (client.getState()) {
             case STATE_USERNAME:
+                line = trim_cmd(line);
                 if (line.empty()) {
                     Tintin_reporter::getInstance().logAudit(WARNING, "Matt_daemon: Client #" + std::to_string(client.getFd()) + " attempted to enter empty username");
                     sendToClient(client.getFd(), "ERROR: Username cannot be empty!\nUSERNAME: ");
@@ -55,6 +73,7 @@ void Server::HandleClient(Client& client, size_t &idx) {
                 break;
             
             case STATE_READY:
+                line = trim_cmd(line);
                 if (line == "quit") {
                     Tintin_reporter::getInstance().logSystem(INFO, "Matt_daemon: Client #" + std::to_string(client.getFd()) + " requested quit.");
                     sendToClient(client.getFd(), "Goodbye!\n");
