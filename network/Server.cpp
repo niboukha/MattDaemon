@@ -25,7 +25,7 @@ Server::~Server() {
     stop();
 }
 
-void Server::HandleClient(Client& client, size_t &idx) {
+bool Server::HandleClient(Client& client, size_t &idx) {
     CommandExecutor shell;
     size_t          pos;
 
@@ -75,11 +75,12 @@ void Server::HandleClient(Client& client, size_t &idx) {
             case STATE_READY:
                 line = trim_cmd(line);
                 if (line == "quit") {
-                    Tintin_reporter::getInstance().logSystem(INFO, "Matt_daemon: Client #" + std::to_string(client.getFd()) + " requested quit.");
+                    Tintin_reporter::getInstance().logSystem(INFO, "Matt_daemon: Request quit.");
                     sendToClient(client.getFd(), "Goodbye!\n");
                     close(client.getFd());
                     removeClient(client.getFd());
                     idx--;
+                    return false;
                 } else if (!line.empty()) {
                     std::string result = shell.executeCommand(line);
                     Tintin_reporter::getInstance().logCommand("Matt_daemon: Client #" + std::to_string(client.getFd()) + " executed command: " + line);
@@ -91,6 +92,7 @@ void Server::HandleClient(Client& client, size_t &idx) {
                 break;
         }
     }
+    return true;
 }
 
 int Server::start() {
@@ -185,7 +187,9 @@ bool Server::handleConnections() {
                 } else {
                     printf("Received from client %d: %s", client_fd, message.c_str());
                     client.appendToBuffer(message);
-                    HandleClient(client, i);
+                    if (!HandleClient(client, i)) {
+                        return false;
+                    }
             }
         }
     }

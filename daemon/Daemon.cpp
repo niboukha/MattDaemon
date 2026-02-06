@@ -53,31 +53,14 @@ static void signal_handler(int signum) {
 void Daemon::setupSignalHandlers(){
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
-    signal(SIGHUP, signal_handler);
     signal(SIGQUIT, signal_handler);
-    signal(SIGILL, signal_handler);
-    signal(SIGTRAP, signal_handler);
+    signal(SIGHUP, signal_handler);
     signal(SIGABRT, signal_handler);
+    signal(SIGSEGV, signal_handler);
+    signal(SIGILL, signal_handler);
     signal(SIGFPE, signal_handler);
     signal(SIGBUS, signal_handler);
-    signal(SIGSEGV, signal_handler);
     signal(SIGSYS, signal_handler);
-    signal(SIGPIPE, signal_handler);
-    signal(SIGALRM, signal_handler);
-    signal(SIGURG, signal_handler);
-    signal(SIGTSTP, signal_handler);
-    signal(SIGCONT, signal_handler);
-    signal(SIGCHLD, signal_handler);
-    signal(SIGTTIN, signal_handler);
-    signal(SIGTTOU, signal_handler);
-    signal(SIGIO, signal_handler);
-    signal(SIGXCPU, signal_handler);
-    signal(SIGXFSZ, signal_handler);
-    signal(SIGVTALRM, signal_handler);
-    signal(SIGPROF, signal_handler);
-    signal(SIGWINCH, signal_handler);
-    signal(SIGUSR1, signal_handler);
-    signal(SIGUSR2, signal_handler);
 }
 
 void Daemon::handleSignal(int signum) {
@@ -89,20 +72,20 @@ void Daemon::handleSignal(int signum) {
         case SIGTERM:
             sigName = "SIGTERM";
             break;
-        case SIGHUP:
-            sigName = "SIGHUP";
-            break;
         case SIGQUIT:
             sigName = "SIGQUIT";
             break;
-        case SIGILL:
-            sigName = "SIGILL";
-            break;
-        case SIGTRAP:
-            sigName = "SIGTRAP";
+        case SIGHUP:
+            sigName = "SIGHUP";
             break;
         case SIGABRT:
             sigName = "SIGABRT";
+            break;
+        case SIGSEGV:
+            sigName = "SIGSEGV";
+            break;
+        case SIGILL:
+            sigName = "SIGILL";
             break;
         case SIGFPE:
             sigName = "SIGFPE";
@@ -110,65 +93,13 @@ void Daemon::handleSignal(int signum) {
         case SIGBUS:
             sigName = "SIGBUS";
             break;
-        case SIGSEGV:
-            sigName = "SIGSEGV";
-            break;
         case SIGSYS:
             sigName = "SIGSYS";
-            break;
-        case SIGPIPE:
-            sigName = "SIGPIPE";
-            break;
-        case SIGALRM:
-            sigName = "SIGALRM";
-            break;
-        case SIGURG:
-            sigName = "SIGURG";
-            break;
-        case SIGTSTP:
-            sigName = "SIGTSTP";
-            break;
-        case SIGCONT:
-            sigName = "SIGCONT";
-            break;
-        case SIGCHLD:
-            sigName = "SIGCHLD";
-            break;
-        case SIGTTIN:
-            sigName = "SIGTTIN";
-            break;
-        case SIGTTOU:
-            sigName = "SIGTTOU";
-            break;
-        case SIGIO:
-            sigName = "SIGIO";
-            break;
-        case SIGXCPU:
-            sigName = "SIGXCPU";
-            break;
-        case SIGXFSZ:
-            sigName = "SIGXFSZ";
-            break;
-        case SIGVTALRM:
-            sigName = "SIGVTALRM";
-            break;
-        case SIGPROF:
-            sigName = "SIGPROF";
-            break;
-        case SIGWINCH:
-            sigName = "SIGWINCH";
-            break;
-        case SIGUSR1:
-            sigName = "SIGUSR1";
-            break;
-        case SIGUSR2:
-            sigName = "SIGUSR2";
             break;
         default:
             sigName = "UNKNOWN";
             break;
     }
-    
     Tintin_reporter::getInstance().info("Matt_daemon: Signal handler: " + sigName + " received.");
     stop();
 }
@@ -224,7 +155,7 @@ int Daemon::run() {
     logger.info("Matt_daemon: Started.");
 
     if (!createLockFile()) {
-        std::cerr << "Can't open :/var/lock/matt_daemon.lock" << std::endl;
+        std::cerr << "Can't open " << lockFilePath << std::endl;
         logger.error("Matt_daemon: Error file locked.");
         logger.info("Matt_daemon: Quitting.");
         return 1;

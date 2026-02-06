@@ -1,5 +1,5 @@
 NAME = Matt_daemon
-GUI_NAME = Matt_daemon_gui
+GUI_NAME = Ben_AFK
 
 CXX = g++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++11 -fsanitize=address -g
