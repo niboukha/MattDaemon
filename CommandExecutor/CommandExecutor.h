@@ -12,9 +12,11 @@
 #include "../mailService/mailService.h"
 
 class CommandExecutor {
-public:
-    CommandExecutor() = default;
-    ~CommandExecutor() = default;
-    std::string executeCommand(std::string &command);
+    public:
+        CommandExecutor() = default;
+        CommandExecutor(const CommandExecutor&) = delete;
+        CommandExecutor& operator=(const CommandExecutor&) = delete;
+        ~CommandExecutor() = default;
+        std::string executeCommand(std::string &command);
 };
 #endif // COMMAND_EXECUTOR_H
