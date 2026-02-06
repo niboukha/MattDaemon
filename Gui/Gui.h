@@ -30,7 +30,7 @@ class Gui : public QMainWindow {
     
     private:
     
-        Gui();
+        // Gui();
         void setupUI();
         void appendOutput(const QString &text);
         void onConnect();

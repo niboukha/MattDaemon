@@ -75,7 +75,7 @@ bool Client::Authenticate(const std::string& username, const std::string &passwo
 
         if (failedCount >= 5 && (now - firstFail) <= 60)
         {
-            Tintin_reporter::getInstance().warning("Matt_daemon: 5 failed authentication attempts detected for client #" + std::to_string(fd));
+            Tintin_reporter::getInstance().logAudit(WARNING, "Matt_daemon: 5 failed authentication attempts detected for client #" + std::to_string(fd));
             MailService().sendEmail("ALERT: 5 failed authentication attempts!",
                   "There have been 5 failed authentication attempts within the last minute.");
             failedCount = 0;

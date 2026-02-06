@@ -1,4 +1,5 @@
 #include "mailService.h"
+#include "../util/Tintin_reporter.hpp"
 
 
 MailService::~MailService() {}
@@ -22,8 +23,14 @@ void MailService::sendEmail(const std::string &subject, const std::string &body)
         "--mail-rcpt " + std::string(EMAIL_RECEIVER) + " "
         "--user \"" + std::string(EMAIL_SENDER) + ":" + std::string(APP_PASSWORD) + "\" "
         "-T /tmp/email.txt";
-        system(command.c_str());
+        int result = system(command.c_str());
+        if (result == 0) {
+            Tintin_reporter::getInstance().logAudit(INFO, "Matt_daemon: Alert email sent successfully");
+        } else {
+            Tintin_reporter::getInstance().logAudit(ERROR, "Matt_daemon: Alert email send failed");
+        }
     } else {
         printf("Failed to open email file for writing.\n");
+        Tintin_reporter::getInstance().logAudit(ERROR, "Matt_daemon: Failed to open email file for writing");
     }
 }

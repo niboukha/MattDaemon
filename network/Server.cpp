@@ -1,7 +1,7 @@
 #include "Server.hpp"
 
 Server::Server() : server_fd(-1) {
-    Tintin_reporter::getInstance().info("Matt_daemon: Server instance created");
+    Tintin_reporter::getInstance().logSystem(INFO, "Matt_daemon: Server instance created");
 }
 
 Server::~Server() {
@@ -26,11 +26,11 @@ void Server::HandleClient(Client& client, size_t &idx) {
         switch (client.getState()) {
             case STATE_USERNAME:
                 if (line.empty()) {
-                    Tintin_reporter::getInstance().userLog("Matt_daemon: Client #" + std::to_string(client.getFd()) + " attempted to enter empty username");
+                    Tintin_reporter::getInstance().logAudit(WARNING, "Matt_daemon: Client #" + std::to_string(client.getFd()) + " attempted to enter empty username");
                     sendToClient(client.getFd(), "ERROR: Username cannot be empty!\nUSERNAME: ");
                 } else {
                     client.setUsername(line);
-                    Tintin_reporter::getInstance().userLog("Matt_daemon: Client #" + std::to_string(client.getFd()) + " entered username: " + line);
+                    Tintin_reporter::getInstance().logAudit(INFO, "Matt_daemon: Client #" + std::to_string(client.getFd()) + " entered username: " + line);
                     sendToClient(client.getFd(), "PASSWORD: ");
                     client.setState(STATE_PASSWORD);
                 }
@@ -38,9 +38,9 @@ void Server::HandleClient(Client& client, size_t &idx) {
                 
             case STATE_PASSWORD:
                 if (line.empty()) {
-                    Tintin_reporter::getInstance().userLog("Matt_daemon: Client #" + std::to_string(client.getFd()) + " attempted to enter empty password");
+                    Tintin_reporter::getInstance().logAudit(WARNING, "Matt_daemon: Client #" + std::to_string(client.getFd()) + " attempted to enter empty password");
                 } else if (client.Authenticate(client.getUsername(), line)) {
-                    Tintin_reporter::getInstance().info("Matt_daemon: Client #" + std::to_string(client.getFd()) + " authenticated successfully");
+                    Tintin_reporter::getInstance().logAudit(INFO, "Matt_daemon: Client #" + std::to_string(client.getFd()) + " authenticated successfully");
 
                     const char *success = "Authentication successful!\nMatt-daemon> ";
                     sendToClient(client.getFd(), success);
@@ -48,7 +48,7 @@ void Server::HandleClient(Client& client, size_t &idx) {
                     client.setState(STATE_READY);
                 } else {
                     const char *fail = "Authentication failed!\nUSERNAME: ";
-                    Tintin_reporter::getInstance().error("Matt_daemon: Client #" + std::to_string(client.getFd()) + " failed authentication attempt");
+                    Tintin_reporter::getInstance().logAudit(ERROR, "Matt_daemon: Client #" + std::to_string(client.getFd()) + " failed authentication attempt");
                     sendToClient(client.getFd(), fail);
                     client.setState(STATE_USERNAME);
                 }
@@ -56,14 +56,14 @@ void Server::HandleClient(Client& client, size_t &idx) {
             
             case STATE_READY:
                 if (line == "quit") {
-                    Tintin_reporter::getInstance().info("Matt_daemon: Client #" + std::to_string(client.getFd()) + " requested quit.");
+                    Tintin_reporter::getInstance().logSystem(INFO, "Matt_daemon: Client #" + std::to_string(client.getFd()) + " requested quit.");
                     sendToClient(client.getFd(), "Goodbye!\n");
                     close(client.getFd());
                     removeClient(client.getFd());
                     idx--;
                 } else if (!line.empty()) {
                     std::string result = shell.executeCommand(line);
-                    Tintin_reporter::getInstance().userLog("Matt_daemon: Client #" + std::to_string(client.getFd()) + " executed command: " + line);
+                    Tintin_reporter::getInstance().logCommand("Matt_daemon: Client #" + std::to_string(client.getFd()) + " executed command: " + line);
                     result += "\nMatt-daemon> ";
                     sendToClient(client.getFd(), result);
                 } else {
@@ -75,17 +75,17 @@ void Server::HandleClient(Client& client, size_t &idx) {
 }
 
 int Server::start() {
-    Tintin_reporter::getInstance().info("Matt_daemon: Starting server...");
+    Tintin_reporter::getInstance().logSystem(INFO, "Matt_daemon: Starting server...");
     
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0) {
-        Tintin_reporter::getInstance().error("Unable to create socket");
+        Tintin_reporter::getInstance().logSystem(ERROR, "Unable to create socket");
         return -1;
     }
 
     int opt = 1;
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-        Tintin_reporter::getInstance().error("Unable to set SO_REUSEADDR");
+        Tintin_reporter::getInstance().logSystem(ERROR, "Unable to set SO_REUSEADDR");
         close(server_fd);
         server_fd = -1;
         return -1;
@@ -98,14 +98,14 @@ int Server::start() {
     address.sin_port = htons(PORT);
 
     if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
-        Tintin_reporter::getInstance().error("Matt_daemon: Unable to bind socket");
+        Tintin_reporter::getInstance().logSystem(ERROR, "Matt_daemon: Unable to bind socket");
         close(server_fd);
         server_fd = -1;
         return -1;
     }
 
     if (listen(server_fd, MAX_CLIENTS) < 0) {
-        Tintin_reporter::getInstance().error("Matt_daemon: Unable to listen on socket");
+        Tintin_reporter::getInstance().logSystem(ERROR, "Matt_daemon: Unable to listen on socket");
         close(server_fd);
         server_fd = -1;
         return -1;
@@ -118,7 +118,7 @@ void Server::stop() {
         return;
     }
     
-    Tintin_reporter::getInstance().info("Matt_daemon: Stopping server...");
+    Tintin_reporter::getInstance().logSystem(INFO, "Matt_daemon: Stopping server...");
     clients.clear();
     close(server_fd);
     server_fd = -1;
@@ -147,7 +147,7 @@ bool Server::handleConnections() {
         if (errno == EINTR) {
             return true;
         }
-        Tintin_reporter::getInstance().error("Matt_daemon: select failed");
+        Tintin_reporter::getInstance().logSystem(ERROR, "Matt_daemon: select failed");
         return true;
     }
 
@@ -181,7 +181,7 @@ std::string Server::receiveFromClient(int client_fd) {
         if (bytes < 0) {
             std::ostringstream oss;
             oss << "Matt_daemon: recv() error from client #" << client_fd;
-            Tintin_reporter::getInstance().error(oss.str());
+            Tintin_reporter::getInstance().logSystem(ERROR, oss.str());
         }
         return "";
     }
@@ -194,7 +194,7 @@ int Server::sendToClient(int client_fd, const std::string& message) {
     if (bytes < 0) {
         std::ostringstream oss;
         oss << "Matt_daemon: send() failed to client #" << client_fd;
-        Tintin_reporter::getInstance().error(oss.str());
+        Tintin_reporter::getInstance().logSystem(ERROR, oss.str());
         return -1;
     }
     return 0;
@@ -203,7 +203,7 @@ int Server::sendToClient(int client_fd, const std::string& message) {
 void Server::removeClient(int client_fd) {
     std::ostringstream oss;
     oss << "Matt_daemon: Client #" << client_fd << " disconnected";
-    Tintin_reporter::getInstance().info(oss.str());
+    Tintin_reporter::getInstance().logSystem(INFO, oss.str());
     
     clients.erase(std::remove_if(clients.begin(), clients.end(), [client_fd](const Client& client) {
         return client.getFd() == client_fd;
@@ -218,12 +218,12 @@ void Server::acceptConnection() {
     int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
     
     if (client_fd < 0) {
-        Tintin_reporter::getInstance().error("Matt_daemon: Unable to accept new connection");
+        Tintin_reporter::getInstance().logSystem(ERROR, "Matt_daemon: Unable to accept new connection");
         return ;
     }
 
     if (clients.size() >= MAX_CLIENTS) {
-        Tintin_reporter::getInstance().warning("Matt_daemon: Max clients reached, rejecting connection");
+        Tintin_reporter::getInstance().logSystem(WARNING, "Matt_daemon: Max clients reached, rejecting connection");
         const char *msg = "Server is full. Maximum clients reached, try again later.\n";
         //add send mail
         send(client_fd, msg, strlen(msg), MSG_NOSIGNAL);

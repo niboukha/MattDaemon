@@ -32,11 +32,11 @@ class Server {
         Server& operator=(const Server&) = delete;
         ~Server();
 
-        void    HandleClient(Client& client, size_t &idx);
         
         int     start();
         void    stop();
         bool    handleConnections();
+        void    HandleClient(Client& client, size_t &idx);
         
         std::string receiveFromClient(int client_fd);
         int         sendToClient(int client_fd, const std::string& message);

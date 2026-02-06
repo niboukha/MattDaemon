@@ -48,9 +48,13 @@ $(OBJ_DIR)/gui_%.o: %.cpp
 clean:
 	rm -rf $(OBJ_DIR)
 
+daemon-clean:
+	@sudo rm -f /var/lock/matt_daemon.lock
+	@sudo pkill -f matt_daemon || true
+
 fclean: clean
 	rm -f $(NAME) $(GUI_NAME)
 
 re: fclean all
 
-.PHONY: all gui clean fclean re
+.PHONY: all gui clean fclean re daemon-clean
