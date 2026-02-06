@@ -42,12 +42,12 @@ class Tintin_reporter {
         void logUserInput(const std::string& input);
         void userLog(const std::string& message);
         
-        void logMessageReceived(const std::string& client, const std::string& content);
-        void logMessageStored(int messageId, const std::string& sender);
-        void logClientConnection(const std::string& clientInfo);
-        void logClientDisconnection(const std::string& clientInfo);
-        void logDaemonStart();
-        void logDaemonStop();
+        // void logMessageReceived(const std::string& client, const std::string& content);
+        // void logMessageStored(int messageId, const std::string& sender);
+        // void logClientConnection(const std::string& clientInfo);
+        // void logClientDisconnection(const std::string& clientInfo);
+        // void logDaemonStart();
+        // void logDaemonStop();
         
         void setLogLevel(LogLevel level);
         void setLogFile(const std::string& filePath);

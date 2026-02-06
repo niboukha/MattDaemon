@@ -21,34 +21,33 @@ enum AuthState {
 };
 
 class Gui : public QMainWindow {
-    // NO Q_OBJECT
 
-public:
-    Gui(QWidget *parent = nullptr);
-    ~Gui();
-    Gui(const Gui &) = delete;
-    Gui& operator=(const Gui &) = delete;
-
-private:
-    void setupUI();
-    void appendOutput(const QString &text);
-    void switchToAuth();
-    void switchToReady();
-    void onConnect();
-    void onSendCommand();
-    void onReceiveData();
-    void onDisconnect();
-
-    QTcpSocket *tcpSocket;
-    QTextEdit *displayBox;
-    QLineEdit *inputField;
-    QPushButton *sendBtn;
-    QPushButton *connectBtn;
-
+    public:
+        Gui(QWidget *parent = nullptr);
+        Gui(const Gui &) = delete;
+        Gui& operator=(const Gui &) = delete;
+        ~Gui();
     
-    bool isConnected;
-    bool isAuthenticated;
-    AuthState authState;
+    private:
+    
+        Gui();
+        void setupUI();
+        void appendOutput(const QString &text);
+        void onConnect();
+        void onSendCommand();
+        void onReceiveData();
+        void onDisconnect();
+
+        QTcpSocket *tcpSocket;
+        QTextEdit *displayBox;
+        QLineEdit *inputField;
+        QPushButton *sendBtn;
+        QPushButton *connectBtn;
+
+        
+        bool isConnected;
+        bool isAuthenticated;
+        AuthState authState;
 };
 
-#endif // GUI_H
+#endif

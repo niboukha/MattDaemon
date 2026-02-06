@@ -22,29 +22,26 @@
 #define MAX_CLIENTS 3
 
 class Server {
-private:
-    std::vector<Client>    clients;
-    int                 server_fd;
+    private:
+        std::vector<Client> clients;
+        int                 server_fd;
 
-public:
-    Server();
-    Server(const Server&) = delete;
-    Server& operator=(const Server&) = delete;
-    ~Server();
-    
-    int     start();
-    void    stop();
-    bool    handleConnections();
-    
-    std::string receiveFromClient(int client_fd);
-    int         sendToClient(int client_fd, const std::string& message);
-    void        removeClient(int client_fd);
-    int         acceptConnection();
-    
-    int                     getServerFd() const;
-    const std::vector<Client>& getClients() const;
+    public:
+        Server();
+        Server(const Server&) = delete;
+        Server& operator=(const Server&) = delete;
+        ~Server();
 
-    void HandelClient(Client& client, int client_index);
+        void    HandleClient(Client& client, size_t &idx);
+        
+        int     start();
+        void    stop();
+        bool    handleConnections();
+        
+        std::string receiveFromClient(int client_fd);
+        int         sendToClient(int client_fd, const std::string& message);
+        void        removeClient(int client_fd);
+        void        acceptConnection();
 };
 
 #endif

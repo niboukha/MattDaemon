@@ -109,29 +109,29 @@ void Tintin_reporter::logUserInput(const std::string& input) {
     writeToFile(oss.str());
 }
 
-void Tintin_reporter::logMessageReceived(const std::string& client, const std::string& content) {
-    log(INFO, "Message received from " + client + ": " + content);
-}
+// void Tintin_reporter::logMessageReceived(const std::string& client, const std::string& content) {
+//     log(INFO, "Message received from " + client + ": " + content);
+// }
 
-void Tintin_reporter::logMessageStored(int messageId, const std::string& sender) {
-    log(INFO, "Message #" + std::to_string(messageId) + " from " + sender + " stored");
-}
+// void Tintin_reporter::logMessageStored(int messageId, const std::string& sender) {
+//     log(INFO, "Message #" + std::to_string(messageId) + " from " + sender + " stored");
+// }
 
-void Tintin_reporter::logClientConnection(const std::string& clientInfo) {
-    log(INFO, "Client connected: " + clientInfo);
-}
+// void Tintin_reporter::logClientConnection(const std::string& clientInfo) {
+//     log(INFO, "Client connected: " + clientInfo);
+// }
 
-void Tintin_reporter::logClientDisconnection(const std::string& clientInfo) {
-    log(INFO, "Client disconnected: " + clientInfo);
-}
+// void Tintin_reporter::logClientDisconnection(const std::string& clientInfo) {
+//     log(INFO, "Client disconnected: " + clientInfo);
+// }
 
-void Tintin_reporter::logDaemonStart() {
-    log(INFO, "Daemon started");
-}
+// void Tintin_reporter::logDaemonStart() {
+//     log(INFO, "Daemon started");
+// }
 
-void Tintin_reporter::logDaemonStop() {
-    log(INFO, "Daemon stopped");
-}
+// void Tintin_reporter::logDaemonStop() {
+//     log(INFO, "Daemon stopped");
+// }
 
 void Tintin_reporter::userLog(const std::string& message) {
     std::ostringstream oss;

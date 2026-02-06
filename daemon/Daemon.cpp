@@ -24,20 +24,14 @@ Daemon::~Daemon() {
 bool Daemon::createLockFile() {
     lockFd = open(lockFilePath.c_str(), O_RDWR | O_CREAT, 0644);
     if (lockFd < 0) {
-        // Tintin_reporter::getInstance().error("Matt_Daemon: Unable to open lock file: " + lockFilePath);
         return false;
     }
 
     if (flock(lockFd, LOCK_EX | LOCK_NB) < 0) {
-        // Tintin_reporter::getInstance().error("Matt_Daemon: Unable to lock file: " + lockFilePath);
         close(lockFd);
         lockFd = -1;
         return false;
     }
-
-    // ftruncate(lockFd, 0); // no need to it cause already 
-    // std::string pidStr = std::to_string(getpid());
-    // write(lockFd, pidStr.c_str(), pidStr.size());
     return true;
 }
 

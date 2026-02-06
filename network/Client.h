@@ -1,8 +1,13 @@
 #ifndef CLIENT_H
 #define CLIENT_H
+
 #include <string>
 #include <ctime>
 #include "../mailService/mailService.h"
+#include "../util/Tintin_reporter.hpp"
+
+#define USERNAME "admin"
+#define PASSWORD "1234"
 
 enum ClientState {
     STATE_USERNAME,
@@ -10,40 +15,41 @@ enum ClientState {
     STATE_READY
 };
 
-#define USERNAME "admin"
-#define PASSWORD "1234"
-
 class Client
 {
     private:
-        int fd;
+        int         fd;
         ClientState state;
         std::string username;
         std::string buffer;
-        bool authenticated;
-        int failedCount = 0;
-        time_t firstFail = 0;
+        bool        authenticated;
+        int         failedCount = 0;
+        time_t      firstFail = 0;
+
     public:
-        Client(/* args */);
-        ~Client();
-        Client(int fd);
+        Client();
         Client(const Client &) ;
         Client& operator=(const Client &);
+        ~Client();
+        
+        Client(int fd);
 
-
-        int getFd() const;
-        void setFd(int fd);
+        int         getFd() const;
         ClientState getState() const;
-        void setState(ClientState state);
         std::string getUsername() const;
-        void setUsername(const std::string &username);
         std::string getBuffer() const;
-        void appendToBuffer(const std::string &data);
-        void clearBuffer();
-        bool isAuthenticated() const;
-        void setAuthenticated(bool auth);
-        bool Authenticate(const std::string& username, const std::string &password);
+
+        void        setFd(int fd);
+        void        setState(ClientState state);
+        void        setUsername(const std::string &username);
+        void        setAuthenticated(bool auth);
+       
+        void        appendToBuffer(const std::string &data);
+        void        clearBuffer();
+        
+        bool        isAuthenticated() const;
+        bool        Authenticate(const std::string& username, const std::string &password);
 };
 
 
-#endif // CLIENT_H
+#endif

@@ -1,5 +1,19 @@
 #include "Gui.h"
 
+// Gui::Gui() : QMainWindow(nullptr), 
+//              tcpSocket(new QTcpSocket(this)),
+//              isConnected(false),
+//              isAuthenticated(false) ,
+//              authState(STATE_AUTH) {
+//     setupUI();
+    
+//     connect(connectBtn, &QPushButton::clicked, this, &Gui::onConnect);
+//     connect(sendBtn, &QPushButton::clicked, this, &Gui::onSendCommand);
+//     connect(tcpSocket, &QTcpSocket::readyRead, this, &Gui::onReceiveData);
+//     connect(tcpSocket, &QTcpSocket::disconnected, this, &Gui::onDisconnect);
+
+//     onConnect();
+// }
 
 Gui::Gui(QWidget *parent)
     : QMainWindow(parent), 
@@ -8,19 +22,23 @@ Gui::Gui(QWidget *parent)
       isAuthenticated(false) ,
       authState(STATE_AUTH){
     setupUI();
+    
     connect(connectBtn, &QPushButton::clicked, this, &Gui::onConnect);
     connect(sendBtn, &QPushButton::clicked, this, &Gui::onSendCommand);
     connect(tcpSocket, &QTcpSocket::readyRead, this, &Gui::onReceiveData);
     connect(tcpSocket, &QTcpSocket::disconnected, this, &Gui::onDisconnect);
+
     onConnect();
 }
 
 Gui::~Gui() {
     if (tcpSocket) {
         tcpSocket->disconnectFromHost();
+        if (tcpSocket->state() != QAbstractSocket::UnconnectedState) {
+            tcpSocket->waitForDisconnected(1000);
+        }
+        tcpSocket->close();
     }
-
-
 
 }
 
@@ -119,7 +137,6 @@ void Gui::setupUI() {
 
 void Gui::appendOutput(const QString &text) {
     displayBox->moveCursor(QTextCursor::End);
-    // if ()
     displayBox->insertPlainText(text + "\n");
     displayBox->verticalScrollBar()->setValue(displayBox->verticalScrollBar()->maximum());
 }
@@ -135,19 +152,19 @@ void Gui::onConnect() {
             sendBtn->setEnabled(true);
             inputField->setEnabled(true);
         } else {
-            appendOutput("<div style='color:#ff6666;text-align:center;'>[ERROR] Connection failed</div>");
+            appendOutput("[ERROR] Unable to connect to server");
             connectBtn->setEnabled(true);
         }
     } else {
+        appendOutput("[INFO] Disconnecting...");
+        connectBtn->setEnabled(false);
         tcpSocket->disconnectFromHost();
-        isConnected = false;
-        isAuthenticated = false;
-        connectBtn->setText("Connect");
-        sendBtn->setEnabled(false);
-        inputField->setEnabled(false);
-        inputField->clear();
-        appendOutput("<div style='color:#ffaa00;text-align:center;'>[INFO] Disconnected</div>");
+        if (tcpSocket->state() != QAbstractSocket::UnconnectedState) {
+            tcpSocket->waitForDisconnected(3000);
+        }
+        connectBtn->setEnabled(true);
     }
+   
 }
 
 void Gui::onSendCommand() {
@@ -177,7 +194,6 @@ void Gui::onReceiveData() {
     for (const QString& line : lines) {
         if (!line.isEmpty())
             appendOutput(line);
-
         // Set input mode based on prompt
         if (line.contains("USERNAME:")) {
             inputField->setEchoMode(QLineEdit::Normal);
@@ -197,8 +213,13 @@ void Gui::onReceiveData() {
 
 void Gui::onDisconnect() {
     isConnected = false;
+    appendOutput("[INFO] Disconnected from server");
     isAuthenticated = false;
     connectBtn->setText("Connect");
+    connectBtn->setEnabled(true);
     sendBtn->setEnabled(false);
     inputField->setEnabled(false);
+    inputField->clear();
+    tcpSocket->close();
+
 }

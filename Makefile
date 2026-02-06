@@ -2,7 +2,7 @@ NAME = Matt_daemon
 GUI_NAME = Matt_daemon_gui
 
 CXX = g++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++11
+CXXFLAGS = -Wall -Wextra -Werror -std=c++11 -fsanitize=address -g
 
 # Qt Configuration
 QT_INCLUDE = -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/x86_64-linux-gnu/qt5/QtNetwork

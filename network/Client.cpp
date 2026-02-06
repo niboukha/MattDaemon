@@ -1,18 +1,10 @@
 #include "Client.h"
 
-Client::Client(/* args */) : fd(-1), state(STATE_USERNAME), authenticated(false) {}
-Client::Client(int fd) : fd(fd), state(STATE_USERNAME), authenticated(false) {}
-Client::~Client() {}
+Client::Client() : fd(-1), state(STATE_USERNAME), authenticated(false) {}
 
-Client::Client(const Client &other) {
-    fd = other.fd;
-    state = other.state;
-    username = other.username;
-    buffer = other.buffer;
-    authenticated = other.authenticated;
-    failedCount = other.failedCount;
-    firstFail = other.firstFail;
-}
+Client::Client(int fd) : fd(fd), state(STATE_USERNAME), authenticated(false) {}
+
+Client::Client(const Client &other) : fd(other.fd), state(other.state), username(other.username), buffer(other.buffer), authenticated(other.authenticated), failedCount(other.failedCount), firstFail(other.firstFail) {}
 
 Client& Client::operator=(const Client &other) {
     if (this != &other) {
@@ -26,6 +18,8 @@ Client& Client::operator=(const Client &other) {
     }
     return *this;
 }
+
+Client::~Client() {}
 
 int Client::getFd() const {
     return fd;
@@ -68,7 +62,6 @@ void Client::setAuthenticated(bool auth) {
 }
 
 bool Client::Authenticate(const std::string& username, const std::string &password) {
-    // Simple authentication logic (for demonstration purposes)
     if (username == USERNAME && password == PASSWORD) {      
         authenticated = true;
         return true;
@@ -82,6 +75,7 @@ bool Client::Authenticate(const std::string& username, const std::string &passwo
 
         if (failedCount >= 5 && (now - firstFail) <= 60)
         {
+            Tintin_reporter::getInstance().warning("Matt_daemon: 5 failed authentication attempts detected for client #" + std::to_string(fd));
             MailService().sendEmail("ALERT: 5 failed authentication attempts!",
                   "There have been 5 failed authentication attempts within the last minute.");
             failedCount = 0;
