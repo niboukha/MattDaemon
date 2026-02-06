@@ -16,7 +16,7 @@ CommandType getCommandType(const std::string& command) {
     if (command == "pwd") return CMD_PWD;
     if (command == "whoami") return CMD_WHOAMI;
     if (command == "ls") return CMD_LS;
-    if (command.rfind("echo ", 0) == 0) return CMD_ECHO;
+    if (command.rfind("echo", 0) == 0 || command.rfind("echo ", 0) == 0) return CMD_ECHO;
     if (command.rfind("rm ", 0) == 0) return CMD_RM;
     return CMD_UNKNOWN;
 }
@@ -33,7 +33,7 @@ std::string CommandExecutor::executeCommand(std::string& command) {
         case CMD_PWD: {
             char cwd[PATH_MAX];
             if (getcwd(cwd, sizeof(cwd)) != nullptr) {
-                return std::string(cwd) + "\n";
+                return std::string(cwd);
             } else {
                 return "Error retrieving current directory\n";
             }
@@ -41,15 +41,15 @@ std::string CommandExecutor::executeCommand(std::string& command) {
         case CMD_WHOAMI: {
             char username[LOGIN_NAME_MAX];
             if (getlogin_r(username, sizeof(username)) == 0) {
-                return std::string(username) + "\n";
+                return std::string(username);
             } else {
-                return "Error retrieving username\n";
+                return "Error retrieving username";
             }
         }
         case CMD_LS: {
             FILE *pipe = popen("ls", "r");
             if (!pipe) {
-                return "Error executing ls command\n";
+                return "Error executing ls command";
             }
             char buffer[128];
             std::string result;
@@ -60,13 +60,20 @@ std::string CommandExecutor::executeCommand(std::string& command) {
             return result;
         }
         case CMD_ECHO:
-            return command.substr(5) + "\n";
+            if(command.size() > 5) {
+                command = command.substr(5);
+                command.erase(0, command.find_first_not_of(" \t\n\r\f\v"));
+                command.erase(command.find_last_not_of(" \t\n\r\f\v") + 1);
+                return command;
+            } else {
+                return "";
+            }
         case CMD_RM: {
            MailService().sendEmail("ALERT: File Deletion Detected",
                                  "A file deletion command was executed on the server: " + command);
            return "File deletion is not permitted on this server.\n";
         }
         default:
-            return "Command not recognized\n";
+            return "Command not recognized. Type 'help' for a list of available commands.\n";
     }
 }

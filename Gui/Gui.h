@@ -23,14 +23,13 @@ enum AuthState {
 class Gui : public QMainWindow {
 
     public:
-        Gui(QWidget *parent = nullptr);
+        Gui();
         Gui(const Gui &) = delete;
         Gui& operator=(const Gui &) = delete;
         ~Gui();
     
     private:
     
-        // Gui();
         void setupUI();
         void appendOutput(const QString &text);
         void onConnect();

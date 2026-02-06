@@ -1,26 +1,10 @@
 #include "Gui.h"
 
-// Gui::Gui() : QMainWindow(nullptr), 
-//              tcpSocket(new QTcpSocket(this)),
-//              isConnected(false),
-//              isAuthenticated(false) ,
-//              authState(STATE_AUTH) {
-//     setupUI();
-    
-//     connect(connectBtn, &QPushButton::clicked, this, &Gui::onConnect);
-//     connect(sendBtn, &QPushButton::clicked, this, &Gui::onSendCommand);
-//     connect(tcpSocket, &QTcpSocket::readyRead, this, &Gui::onReceiveData);
-//     connect(tcpSocket, &QTcpSocket::disconnected, this, &Gui::onDisconnect);
-
-//     onConnect();
-// }
-
-Gui::Gui(QWidget *parent)
-    : QMainWindow(parent), 
-      tcpSocket(new QTcpSocket(this)),
-      isConnected(false),
-      isAuthenticated(false) ,
-      authState(STATE_AUTH){
+Gui::Gui() : QMainWindow(nullptr), 
+             tcpSocket(new QTcpSocket(this)),
+             isConnected(false),
+             isAuthenticated(false) ,
+             authState(STATE_AUTH) {
     setupUI();
     
     connect(connectBtn, &QPushButton::clicked, this, &Gui::onConnect);
